@@ -6,6 +6,24 @@ internal static class SelfTest
     {
         int checks=0;
         void Check(bool condition,string name) { if(!condition) throw new Exception("FAILED: "+name); checks++; }
+        using(var bitmap=new Bitmap(128,128))
+        {
+            using(var g=Graphics.FromImage(bitmap)) g.Clear(Color.Black);
+            Check(ScreenPicker.IsBlack(bitmap),"empty capture detection");
+            using(var g=Graphics.FromImage(bitmap)) g.Clear(Color.CornflowerBlue);
+            Check(!ScreenPicker.IsBlack(bitmap),"valid capture is not rejected");
+            using var overlay=new PickerOverlay(new Rectangle(100000,100000,128,128),new Bitmap(bitmap),1,_=>{});
+            using var rendered=new Bitmap(128,128);
+            overlay.DrawToBitmap(rendered,new Rectangle(0,0,128,128));
+            Check(rendered.GetPixel(64,64).ToArgb()==Color.CornflowerBlue.ToArgb(),"picker retains captured background pixels");
+        }
+        using(var combo=new RampComboBox())
+        {
+            combo.Items.AddRange(["RGB","HSV","HSL"]);
+            int changes=0; combo.SelectedIndexChanged+=(_,_)=>changes++;
+            combo.SelectedItem="RGB"; combo.SelectedItem="HSV"; combo.SelectedItem="HSV";
+            Check(combo.Text=="HSV" && changes==2,"custom dropdown selection updates once");
+        }
         Check(DesktopCapture.ToSdr(.5f,.5f,.5f,1).R == 188, "linear HDR midtone encodes as sRGB");
         Check(DesktopCapture.ToSdr(1,1,1,2).R == 188, "HDR display SDR white normalization");
         Check(DesktopCapture.ToSdr(2,2,2,2).R == 255, "HDR display reference white");
@@ -122,6 +140,3 @@ internal static class SelfTest
         return $"PASS: {checks} checks. Interpolation, alpha, hue paths, duplicate stops, validation, file roundtrip, editor layout and {displays.Length} monitor capture(s).\n" + string.Join("\n", captureInfo);
     }
 }
-
-
-

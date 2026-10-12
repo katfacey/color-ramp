@@ -131,20 +131,9 @@ internal sealed class MainForm : Form
         eyedroppers.Add(button);
     }
     void AddLabel(string title, int x, int y, int width) => Controls.Add(new Label { Text = title, Bounds = new Rectangle(x,y,width,24) });
-    void SetupCombo(ComboBox control, int x, int y, int width, string[] items)
+    void SetupCombo(RampComboBox control, int x, int y, int width, string[] items)
     {
         control.Bounds = new Rectangle(x,y,width,32);
-        control.DropDownStyle = ComboBoxStyle.DropDownList;
-        control.FlatStyle = FlatStyle.Flat;
-        control.DrawMode = DrawMode.OwnerDrawFixed;
-        control.ItemHeight = 24;
-        control.DrawItem += (_, e) => {
-            if(e.Index < 0) return;
-            using var brush = new SolidBrush(control.BackColor);
-            e.Graphics.FillRectangle(brush,e.Bounds);
-            TextRenderer.DrawText(e.Graphics,control.Items[e.Index]?.ToString(),control.Font,e.Bounds,control.ForeColor,TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
-            if((e.State & DrawItemState.Focus)!=0) e.DrawFocusRectangle();
-        };
         control.Items.AddRange(items);
         control.AccessibleName = control == colorMode ? "Color mode" : control == interpolation ? "Interpolation" : "Hue interpolation";
         Controls.Add(control);

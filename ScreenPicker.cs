@@ -7,8 +7,32 @@ internal static class ScreenPicker
 {
     public static Bitmap Capture(Rectangle bounds)
     {
-        try { return DesktopCapture.Capture(bounds); }
+        try
+        {
+            var capture = DesktopCapture.Capture(bounds);
+            if (!IsBlack(capture)) return capture;
+            // Some drivers return a successful but empty duplication surface.
+            // Check a second capture before replacing a visible desktop with it.
+            using var fallback = CaptureGdi(bounds);
+            if (IsBlack(fallback)) return capture; // A genuinely black desktop is valid.
+            capture.Dispose();
+            return new Bitmap(fallback);
+        }
         catch (Exception ex) { System.Diagnostics.Trace.WriteLine($"DirectX capture unavailable: {ex.Message}"); }
+        return CaptureGdi(bounds);
+    }
+    internal static bool IsBlack(Bitmap bitmap)
+    {
+        for (int y=0; y<bitmap.Height; y+=Math.Max(1,bitmap.Height/64))
+        for (int x=0; x<bitmap.Width; x+=Math.Max(1,bitmap.Width/64))
+        {
+            var pixel=bitmap.GetPixel(x,y);
+            if(pixel.R!=0 || pixel.G!=0 || pixel.B!=0) return false;
+        }
+        return true;
+    }
+    static Bitmap CaptureGdi(Rectangle bounds)
+    {
         var bitmap=new Bitmap(bounds.Width,bounds.Height,PixelFormat.Format24bppRgb);
         try { using var graphics=Graphics.FromImage(bitmap); graphics.CopyFromScreen(bounds.Location,Point.Empty,bounds.Size,CopyPixelOperation.SourceCopy); return bitmap; }
         catch { bitmap.Dispose(); throw; }

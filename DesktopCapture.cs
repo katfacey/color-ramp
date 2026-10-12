@@ -25,7 +25,15 @@ internal static class DesktopCapture
                 using (device) using (context) using (var output5 = output.QueryInterface<IDXGIOutput5>())
                 using (var duplication = CreateDuplication(output5, device))
                 {
-                    duplication.AcquireNextFrame(1500, out _, out var resource).CheckError();
+                    IDXGIResource resource;
+                    var deadline = Environment.TickCount64 + 1500;
+                    while (true)
+                    {
+                        duplication.AcquireNextFrame((uint)Math.Max(1,deadline-Environment.TickCount64), out var frame, out resource).CheckError();
+                        if (frame.LastPresentTime != 0) break;
+                        resource.Dispose(); duplication.ReleaseFrame();
+                        if (Environment.TickCount64 >= deadline) throw new TimeoutException("No desktop image was presented for capture.");
+                    }
                     try
                     {
                         using (resource) using (var texture = resource.QueryInterface<ID3D11Texture2D>())
@@ -144,8 +152,3 @@ internal static class DesktopCapture
         return 1;
     }
 }
-
-
-
-
-
