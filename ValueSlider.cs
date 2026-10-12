@@ -8,6 +8,7 @@ internal sealed class ValueSlider : Control
     decimal value, maximum = 1;
     TextBox? editor;
     public decimal Minimum { get; set; }
+    public bool StepSelector { get; set; }
     public decimal Maximum { get => maximum; set { maximum = value; Value = this.value; Invalidate(); } }
     public int DecimalPlaces { get; set; }
     public decimal Increment { get; set; } = .001m;
@@ -26,17 +27,21 @@ internal sealed class ValueSlider : Control
     }
     protected override void OnPaint(PaintEventArgs e)
     {
-        e.Graphics.Clear(BackColor);
+        e.Graphics.Clear(Parent?.BackColor??BackColor);
+        e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+        using var shape=RoundedUi.Path(new RectangleF(.5f,.5f,Width-1,Height-1),LogicalToDeviceUnits(5));
+        using(var background=new SolidBrush(BackColor))e.Graphics.FillPath(background,shape);
         float fraction = Maximum == Minimum ? 0 : (float)((Value - Minimum) / (Maximum - Minimum));
         using var fill = new SolidBrush(Color.FromArgb(85, SystemColors.Highlight));
-        e.Graphics.FillRectangle(fill, 0, 0, fraction * Width, Height);
+        if(!StepSelector){var state=e.Graphics.Save();e.Graphics.SetClip(shape);e.Graphics.FillRectangle(fill,0,0,fraction*Width,Height);e.Graphics.Restore(state);}
         using var border = new Pen(Focused ? SystemColors.Highlight : Color.FromArgb(128, ForeColor));
-        e.Graphics.DrawRectangle(border, 0, 0, Width - 1, Height - 1);
+        e.Graphics.DrawPath(border,shape);
+        if(StepSelector){using var pen=new Pen(ForeColor,1.5f);float y=Height/2f;e.Graphics.DrawLines(pen,[new PointF(14,y-4),new PointF(10,y),new PointF(14,y+4)]);e.Graphics.DrawLines(pen,[new PointF(Width-14,y-4),new PointF(Width-10,y),new PointF(Width-14,y+4)]);}
         TextRenderer.DrawText(e.Graphics, Value.ToString($"F{DecimalPlaces}", CultureInfo.CurrentCulture), Font, ClientRectangle, ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
     }
     void SetFromMouse(int x) => Value = Minimum + (Maximum - Minimum) * Math.Clamp((decimal)x / Math.Max(1, Width - 1), 0, 1);
-    protected override void OnMouseDown(MouseEventArgs e) { base.OnMouseDown(e); if (e.Button != MouseButtons.Left || e.Clicks > 1) return; Focus(); Capture = true; SetFromMouse(e.X); }
-    protected override void OnMouseMove(MouseEventArgs e) { base.OnMouseMove(e); if (Capture && e.Button == MouseButtons.Left) SetFromMouse(e.X); }
+    protected override void OnMouseDown(MouseEventArgs e) { base.OnMouseDown(e); if (e.Button != MouseButtons.Left || e.Clicks > 1) return; Focus(); if(StepSelector){if(e.X<Width/3)Value-=1;else if(e.X>Width*2/3)Value+=1;return;} Capture = true; SetFromMouse(e.X); }
+    protected override void OnMouseMove(MouseEventArgs e) { base.OnMouseMove(e); if (!StepSelector && Capture && e.Button == MouseButtons.Left) SetFromMouse(e.X); }
     protected override void OnMouseUp(MouseEventArgs e) { Capture = false; base.OnMouseUp(e); }
     protected override void OnMouseDoubleClick(MouseEventArgs e) { base.OnMouseDoubleClick(e); BeginEdit(); }
     protected override bool IsInputKey(Keys keyData) => keyData is Keys.Left or Keys.Right or Keys.Home or Keys.End || base.IsInputKey(keyData);
@@ -57,7 +62,7 @@ internal sealed class ValueSlider : Control
     void BeginEdit()
     {
         if (editor != null) return;
-        editor = new TextBox { Text = Value.ToString($"F{DecimalPlaces}"), Bounds = ClientRectangle, Font = Font, BackColor = BackColor, ForeColor = ForeColor, TextAlign = HorizontalAlignment.Center };
+        editor = new TextBox { Text = Value.ToString($"F{DecimalPlaces}"), Bounds = new Rectangle(6, Math.Max(2,(Height-Font.Height-4)/2),Width-12,Font.Height+4), BorderStyle=BorderStyle.None, Font = Font, BackColor = BackColor, ForeColor = ForeColor, TextAlign = HorizontalAlignment.Center };
         Controls.Add(editor);
         editor.KeyDown += (_, e) => { if (e.KeyCode is Keys.Enter or Keys.Escape) { e.SuppressKeyPress = true; EndEdit(e.KeyCode == Keys.Enter); } };
         editor.Leave += (_, _) => EndEdit(true);

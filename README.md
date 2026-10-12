@@ -42,7 +42,7 @@ Screen capture uses DirectX desktop duplication, preserving HDR pixels as floati
 
 This is an independent app, not an official Blender product or an exact reproduction of Blender's color-management pipeline. Interpolation uses 8-bit display RGB values; Blender may interpolate scene-linear values and apply view transforms. Colors may differ under HDR, wide-gamut or ICC color management. Protected video, secure desktops and some hardware overlays cannot be sampled reliably. Captures freeze the desktop at the time picking begins; restart picking to refresh changing content.
 
-The main interface follows the approved concept. The color-edit dialog is the native Windows dialog in this first version. HEX copying, editable JSON saving and PNG export are implemented; a saved-ramp library and Blender import/export are not yet included.
+The main interface uses rounded buttons and fields. Stop selection uses left/right chevrons rather than dragging; position and alpha remain sliders. The optional Blender-style color picker includes a hue/saturation wheel, brightness strip, HEX entry and alpha. Toggle "Use Blender-style color picker" in the tools menu to switch between it and the native Windows dialog. This choice is saved between sessions. HEX copying, editable JSON saving and PNG export are implemented; a saved-ramp library and Blender import/export are not yet included.
 
 ## Build and verify
 

@@ -21,6 +21,13 @@ internal static class Program
             catch (Exception ex) { File.WriteAllText(output, ex.ToString()); Environment.ExitCode = 1; }
             return;
         }
+        if(args.Contains("--preview-picker"))
+        {
+            using var dialog=new ColorPickerDialog(Color.FromArgb(91,137,204),.85,!args.Contains("--light"));
+            dialog.Show();Application.DoEvents();
+            using var bitmap=new Bitmap(dialog.Width,dialog.Height);dialog.DrawToBitmap(bitmap,new Rectangle(Point.Empty,dialog.Size));
+            bitmap.Save(args[Array.IndexOf(args,"--preview-picker")+1],System.Drawing.Imaging.ImageFormat.Png);dialog.Close();return;
+        }
         if (args.Contains("--preview"))
         {
             var output = args[Array.IndexOf(args, "--preview") + 1];

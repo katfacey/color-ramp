@@ -6,6 +6,16 @@ internal static class SelfTest
     {
         int checks=0;
         void Check(bool condition,string name) { if(!condition) throw new Exception("FAILED: "+name); checks++; }
+        foreach(var color in new[]{Color.Red,Color.Lime,Color.Blue,Color.White,Color.Black,Color.FromArgb(43,91,172)})
+        {
+            using var wheel=new ColorWheel();wheel.SetColor(color);
+            Check(wheel.SelectedColor.ToArgb()==color.ToArgb(),"custom color wheel RGB roundtrip");
+        }
+        using(var dialog=new ColorPickerDialog(Color.CornflowerBlue,.375,true))
+        {
+            Check(dialog.SelectedColor.ToArgb()==Color.CornflowerBlue.ToArgb()&&dialog.SelectedAlpha==.375,"custom picker retains color and alpha");
+            Check(dialog.Controls.Cast<Control>().All(c=>dialog.ClientRectangle.Contains(c.Bounds)),"custom picker controls fit");
+        }
         using(var bitmap=new Bitmap(128,128))
         {
             using(var g=Graphics.FromImage(bitmap)) g.Clear(Color.Black);

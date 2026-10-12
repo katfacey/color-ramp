@@ -10,7 +10,7 @@ internal sealed class MainForm : Form
     RampStop selected;
     readonly RampView ramp = new();
     readonly ValueSlider index = new(), position = new(), alpha = new();
-    readonly TextBox hex = new();
+    readonly RoundedTextBox hex = new();
     readonly RampComboBox colorMode = new(), interpolation = new(), hue = new();
     readonly Button swatch = new(), pin = new();
     readonly Label status = new(), count = new();
@@ -22,6 +22,7 @@ internal sealed class MainForm : Form
     readonly System.Windows.Forms.Timer themeTimer = new() { Interval = 2000 };
     readonly bool persist;
     bool updating, dark, picking;
+    bool customPicker = true;
     string theme = "System";
     const string SessionFile = "session.json";
     Color surface, text, field;
@@ -46,12 +47,6 @@ internal sealed class MainForm : Form
         AddButton("−", 62, 18, 38, DeleteStop, "Delete selected stop (Delete)");
         var tools = AddButton("", 106, 18, 38, ShowMenu, "Ramp tools, export and appearance");
         tools.AccessibleName = "Ramp tools";
-        tools.Paint += (_, e) => {
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using var pen = new Pen(tools.ForeColor, 1.6f);
-            float x = tools.Width / 2f, y = tools.Height / 2f, size = tools.LogicalToDeviceUnits(5);
-            e.Graphics.DrawLines(pen, [new PointF(x-size,y-2),new PointF(x,y+3),new PointF(x+size,y-2)]);
-        };
         AddEyedropper("", 150, 18, 40, "Pick a color from any display (E)");
         SetupCombo(colorMode, 204, 18, 100, ["RGB", "HSV", "HSL"]);
         SetupCombo(interpolation, 316, 18, 164, ["Linear", "Constant", "Ease", "Cardinal", "B-Spline"]);
@@ -68,6 +63,9 @@ internal sealed class MainForm : Form
         ramp.StopMoved += () => { RefreshFields(); SaveSession(); };
         ramp.EditColor += EditColor;
         SetupNumber(index, 18, 175, 80, 0, 31, 0, 1);
+        index.StepSelector = true;
+        index.Cursor = Cursors.Default;
+        tips.SetToolTip(index,"Previous/next stop; double-click the number to type an index");
         AddLabel("Pos", 114, 179, 35);
         SetupNumber(position, 155, 175, 105, 0, 1, 3, .001m);
         SetupCombo(hue, 283, 175, 160, ["Near", "Far", "Clockwise", "Counterclockwise"]);
@@ -78,7 +76,7 @@ internal sealed class MainForm : Form
         AddEyedropper("", 196, 215, 38, "Set this stop from a screen pixel");
         AddLabel("HEX", 246, 220, 38);
         hex.Bounds = new Rectangle(288, 216, 126, 28);
-        hex.BorderStyle = BorderStyle.FixedSingle;
+
         hex.MaxLength = 7;
         Controls.Add(hex);
         AddLabel("Alpha", 434, 220, 47);
@@ -86,8 +84,8 @@ internal sealed class MainForm : Form
         var pickScreen = AddButton("🖥️ Pick screen", 18, 261, 140, async () => await Pick(), "Sample any monitor (E); Esc cancels");
         pickScreen.Font = new Font("Segoe UI Emoji", 10);
         pickScreen.AccessibleName = "Pick screen";
-        AddButton("Copy color", 170, 261, 130, CopyColor, "Copy selected stop as HEX (Ctrl+C)");
-        AddButton("Save ramp", 312, 261, 130, SaveRamp, "Save editable ramp (Ctrl+S)");
+        AddButton("📋 Copy color", 170, 261, 130, CopyColor, "Copy selected stop as HEX (Ctrl+C)");
+        AddButton("💾 Save ramp", 312, 261, 130, SaveRamp, "Save editable ramp (Ctrl+S)");
         status.Bounds = new Rectangle(454, 266, 148, 25);
         status.TextAlign = ContentAlignment.MiddleRight;
         status.Font = new Font("Segoe UI", 8.5f);
@@ -109,7 +107,7 @@ internal sealed class MainForm : Form
     }
     Button AddButton(string title, int x, int y, int width, Action action, string tip)
     {
-        var button = new Button { Text = title, Bounds = new Rectangle(x, y, width, 32), FlatStyle = FlatStyle.Flat, TabStop = true, UseVisualStyleBackColor = false };
+        var button = new RoundedButton { Text = title, Bounds = new Rectangle(x, y, width, 32), FlatStyle = FlatStyle.Flat, TabStop = true, UseVisualStyleBackColor = false };
         button.FlatAppearance.BorderSize = 1;
         button.Click += (_, _) => action();
         Controls.Add(button);
@@ -199,6 +197,12 @@ internal sealed class MainForm : Form
     }
     void EditColor()
     {
+        if(customPicker)
+        {
+            using var picker = new ColorPickerDialog(selected.Color,selected.Alpha,dark);
+            if(picker.ShowDialog(this)==DialogResult.OK) Change(()=>{selected.Hex=RampDocument.ToHex(picker.SelectedColor);selected.Alpha=picker.SelectedAlpha;});
+            return;
+        }
         using var dialog = new ColorDialog { Color = selected.Color, FullOpen = true, AnyColor = true };
         if (dialog.ShowDialog(this) == DialogResult.OK) Change(() => selected.Hex = RampDocument.ToHex(dialog.Color));
     }
@@ -270,6 +274,8 @@ internal sealed class MainForm : Form
             item.Click += (_,_) => { SetTheme(choice); SaveSession(); };
             menu.Items.Add(item);
         }
+        var pickerOption = new ToolStripMenuItem("Use Blender-style color picker") { Checked = customPicker };
+        pickerOption.Click += (_,_)=>{customPicker=!customPicker;SaveSession();}; menu.Items.Add(pickerOption);
         Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click a stop: edit color\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
         // Keep the menu alive through modal dialogs; dispose on next open or form disposal.
         menu.Show(this, new Point(106,52));
@@ -284,7 +290,7 @@ internal sealed class MainForm : Form
     }
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
-        bool editing = ActiveControl is TextBox || ActiveControl is ValueSlider;
+        bool editing = ActiveControl is TextBox || ActiveControl is RoundedTextBox || ActiveControl is ValueSlider;
         if (keyData == (Keys.Control | Keys.S)) { SaveRamp(); return true; }
         if (keyData == (Keys.Control | Keys.O)) { OpenRamp(); return true; }
         if (keyData == (Keys.Control | Keys.Z) && ActiveControl != hex) { Undo(false); return true; }
@@ -330,7 +336,7 @@ internal sealed class MainForm : Form
     void SaveSession()
     {
         if (!persist) return;
-        try { Directory.CreateDirectory(Storage.DirectoryPath); Storage.Write(Path.Combine(Storage.DirectoryPath,SessionFile),document); File.WriteAllText(Path.Combine(Storage.DirectoryPath,"appearance.json"),JsonSerializer.Serialize(new { Theme=theme, Pinned=TopMost })); }
+        try { Directory.CreateDirectory(Storage.DirectoryPath); Storage.Write(Path.Combine(Storage.DirectoryPath,SessionFile),document); File.WriteAllText(Path.Combine(Storage.DirectoryPath,"appearance.json"),JsonSerializer.Serialize(new { Theme=theme, Pinned=TopMost, CustomPicker=customPicker })); }
         catch { status.Text="Autosave unavailable"; }
     }
     void LoadSession()
@@ -340,7 +346,7 @@ internal sealed class MainForm : Form
             var path=Path.Combine(Storage.DirectoryPath,SessionFile);
             if(File.Exists(path)) { document=Storage.Read(path); selected=document.Stops[0]; }
             var settings=Path.Combine(Storage.DirectoryPath,"appearance.json");
-            if(File.Exists(settings)) { using var json=JsonDocument.Parse(File.ReadAllText(settings)); var root=json.RootElement; var value=root.GetProperty("Theme").GetString(); if(value is "System" or "Light" or "Dark") theme=value; TopMost=root.GetProperty("Pinned").GetBoolean(); UpdatePin(); }
+            if(File.Exists(settings)) { using var json=JsonDocument.Parse(File.ReadAllText(settings)); var root=json.RootElement; var value=root.GetProperty("Theme").GetString(); if(value is "System" or "Light" or "Dark") theme=value; TopMost=root.GetProperty("Pinned").GetBoolean(); if(root.TryGetProperty("CustomPicker",out var pickerSetting))customPicker=pickerSetting.GetBoolean(); UpdatePin(); }
         }
         catch { status.Text="Default ramp loaded"; }
     }
