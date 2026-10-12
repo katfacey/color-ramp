@@ -12,37 +12,34 @@ The packaged x64 build includes its .NET runtime. Developer builds need the .NET
 
 ## Using the editor
 
-- Click a stop to select it; drag it to reposition. Drag **Pos** or **Alpha** left/right from anywhere in the field to adjust relative to its current value. Scroll while hovering to increase/decrease, or double-click the field to type an exact value.
-- **+** inserts a stop between the selected stop and its predecessor (or the next stop when the first is selected). **−** removes the selected stop. A ramp supports 2 to 32 stops.
-- Double-click the ramp to add a marker at that position, using the sampled ramp color and alpha. Right-click the ramp for **Copy color HEX** and **Place marker** at that location. Click the color swatch to open the selected color dialog. Enter six HEX digits directly or adjust alpha from 0 to 1.
-- **The eyedropper beside the color swatch** hides the editor and shows a magnified pixel preview over a frozen capture of each display. Move between monitors freely. Click or press Enter to apply, Esc or right-click to cancel. Arrow keys move one physical pixel.
-- **Copy color** copies the selected stop's six-digit HEX value. **Save ramp** saves the editable settings as `.colorramp.json`.
-- The **⌄** (downward chevron) menu has Open, flip, distribute, undo/redo, PNG export, and System/Light/Dark theme choices.
-- **📌** keeps the editor above other windows; a check mark indicates it is pinned. System theme follows Windows' app theme.
+- **Select and move:** Click a marker to select it, then drag it along the ramp. Use the arrows beside the stop number to select the previous or next marker.
+- **Add and remove:** Double-click the ramp to add a marker with the color at that point, or use **+**. Use **−** to remove the selected marker. Right-click the ramp to place a marker or copy the color there. Ramps support 2–32 markers.
+- **Adjust position and opacity:** Drag **Pos** or **Alpha** left/right, scroll while hovering, or double-click to type a value. Alpha runs from 0 (transparent) to 1 (opaque).
+- **Choose a color:** Click the color swatch or enter a HEX value. The **⌄** menu lets you switch between the Blender-style picker and the Windows picker.
+- **Pick from your screen:** Click the eyedropper beside the swatch. Click or press Enter to choose a pixel; press Esc or right-click to cancel. Arrow keys move one pixel. Picking works across connected monitors.
+- **Copy and save:** **📋 Copy color** copies the selected color as HEX. **💾 Save ramp** saves an editable `.colorramp.json` file. The **⌄** menu also offers Open, PNG export, flip, distribute, undo/redo, and theme settings.
+- **Keep it visible:** **📌** toggles always-on-top; a check mark means it is enabled. Choose System theme to follow Windows' light/dark setting.
+
+Your last ramp, theme, pin, and picker choices are saved automatically in `%LOCALAPPDATA%\ColorRamp`. The app makes no network requests; screen captures stay in memory and are discarded after picking.
 
 | Shortcut | Action |
 |---|---|
-| E | Pick screen (outside a text field) |
+| E | Screen eyedropper |
 | Ctrl+S / Ctrl+O | Save / open ramp |
-| Ctrl+Z / Ctrl+Y | Undo / redo (HEX text retains native text undo) |
-| Ctrl+C | Copy selected color (outside a text field) |
-| Delete | Delete stop (outside a text field) |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
+| Ctrl+C | Copy selected color |
+| Delete | Delete selected marker |
 
-The last ramp and theme/pin choices are saved in `%LOCALAPPDATA%\ColorRamp`. Screen captures are held only in memory during picking and are discarded when the picker closes. No network access is made by the app.
+E, Ctrl+C, and Delete apply when you are not editing a field. HEX text keeps its own undo behavior.
 
 ## Color behavior and current limits
 
-RGB, HSV and HSL modes are supported. RGB interpolation supports Linear, Constant, Ease, Cardinal and B-Spline. HSV/HSL use Linear, Constant or Ease and expose Near/Far/Clockwise/Counterclockwise hue paths. PNG export preserves alpha.
-
-B-Spline blends before the first stop and after the last stop using Blender-style virtual endpoint stops. A stop's displayed color may differ from its own swatch because B-Spline smooths neighboring colors rather than passing through every swatch exactly.
-
-The screen-picking button beside the color swatch uses an eyedropper icon. The original vector and transparent 64×64 theme variants are in `assets/`; the artwork is CC0 with no attribution requirement. See `assets/LICENSE.md` for the source record.
-
-Screen capture uses DirectX desktop duplication, preserving HDR pixels as floating-point scRGB before converting to the ramp's SDR sRGB range. Each display's Windows SDR white level is used to keep ordinary desktop colors consistent across HDR and SDR screens. Highlights outside the SDR range are scaled together to retain their hue. The picker waits for an actual desktop image instead of a cursor-only update, and checks empty black captures against a GDI fallback. A GDI capture fallback is available when DirectX capture is unavailable; this fallback may clip HDR content.
-
-This is an independent app, not an official Blender product or an exact reproduction of Blender's color-management pipeline. Interpolation uses 8-bit display RGB values; Blender may interpolate scene-linear values and apply view transforms. Colors may differ under HDR, wide-gamut or ICC color management. Protected video, secure desktops and some hardware overlays cannot be sampled reliably. Captures freeze the desktop at the time picking begins; restart picking to refresh changing content.
-
-The main interface uses rounded buttons and fields. Stop selection uses left/right chevrons rather than dragging; position and alpha remain sliders. The optional Blender-style color picker includes a hue/saturation wheel, brightness strip, HEX entry and alpha. Toggle "Use Blender-style color picker" in the tools menu to switch between it and the native Windows dialog. This choice is saved between sessions. HEX copying, editable JSON saving and PNG export are implemented; a saved-ramp library and Blender import/export are not yet included.
+- **Color modes:** RGB supports Linear, Constant, Ease, Cardinal, and B-Spline interpolation. HSV/HSL support Linear, Constant, and Ease, with four hue directions. PNG export preserves transparency.
+- **B-Spline:** Smooths neighboring colors, so the ramp may not match a marker's swatch exactly. Blending extends beyond the first and last markers, as in Blender.
+- **Color matching:** This independent app is inspired by Blender but uses a different color-management pipeline. HDR, wide-gamut, and display profiles can affect the colors you see and sample.
+- **Screen capture:** HDR captures are converted to SDR sRGB using each display's SDR white level. The fallback capture method may clip HDR colors. Protected video, secure desktops, and some overlays cannot be sampled reliably.
+- **Frozen preview:** Picking freezes each screen when it starts. Restart the eyedropper to capture updated content.
+- **Not yet available:** A saved-ramp library and Blender import/export.
 
 ## Build and verify
 
