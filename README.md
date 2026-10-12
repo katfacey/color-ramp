@@ -62,6 +62,10 @@ The checks cover interpolation/alpha, hue paths, duplicate stops, invalid data, 
 
 Sources: [Blender 5.1 Color Ramp widget](https://docs.blender.org/manual/en/5.1/interface/controls/templates/color_ramp.html), [Windows HDR color](https://learn.microsoft.com/en-us/windows/win32/direct3darticles/high-dynamic-range), [Windows SDR white level](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-displayconfig_sdr_white_level). DirectX bindings use [Vortice.Windows](https://github.com/amerkoleci/Vortice.Windows), licensed under MIT.
 
+## License
+
+Color Ramp is released under the [MIT license](LICENSE). Third-party notices are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and icon provenance is in [assets/LICENSE.md](assets/LICENSE.md).
+
 ## AI disclaimer
 
 This project was coded with AI assistance using OpenAI Codex.
