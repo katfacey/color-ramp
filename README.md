@@ -39,7 +39,7 @@ E, Ctrl+C, and Delete apply when you are not editing a field. HEX text keeps its
 - **Color matching:** This independent app is inspired by Blender but uses a different color-management pipeline. HDR, wide-gamut, and display profiles can affect the colors you see and sample.
 - **Screen capture:** HDR captures are converted to SDR sRGB using each display's SDR white level. The fallback capture method may clip HDR colors. Protected video, secure desktops, and some overlays cannot be sampled reliably.
 - **Frozen preview:** Picking freezes each screen when it starts. Restart the eyedropper to capture updated content.
-- **Not yet available:** A saved-ramp library and Blender import/export.
+- **Not yet available:** A saved-ramp library.
 
 ## Build and verify
 
