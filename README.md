@@ -36,7 +36,9 @@ RGB, HSV and HSL modes are supported. RGB interpolation supports Linear, Constan
 
 B-Spline blends before the first stop and after the last stop using Blender-style virtual endpoint stops. A stop's displayed color may differ from its own swatch because B-Spline smooths neighboring colors rather than passing through every swatch exactly.
 
-The screen-picking buttons use an actual eyedropper icon. Its original vector and transparent 64×64 theme variants are in `assets/`; the artwork is CC0 with no attribution requirement. See `assets/LICENSE.md` for the source record.
+The compact screen-picking buttons use an eyedropper icon, and the full Pick screen button uses 🖥️. The original vector and transparent 64×64 theme variants are in `assets/`; the artwork is CC0 with no attribution requirement. See `assets/LICENSE.md` for the source record.
+
+Screen capture uses DirectX desktop duplication, preserving HDR pixels as floating-point scRGB before converting to the ramp's SDR sRGB range. Each display's Windows SDR white level is used to keep ordinary desktop colors consistent across HDR and SDR screens. Highlights outside the SDR range are scaled together to retain their hue. A GDI capture fallback is available when DirectX capture is unavailable; this fallback may clip HDR content.
 
 This is an independent app, not an official Blender product or an exact reproduction of Blender's color-management pipeline. Interpolation uses 8-bit display RGB values; Blender may interpolate scene-linear values and apply view transforms. Colors may differ under HDR, wide-gamut or ICC color management. Protected video, secure desktops and some hardware overlays cannot be sampled reliably. Captures freeze the desktop at the time picking begins; restart picking to refresh changing content.
 
@@ -58,7 +60,7 @@ Get-Content artifacts/self-test.txt
 
 The checks cover interpolation/alpha, hue paths, duplicate stops, invalid data, independent undo snapshots, file round trips, layout, and a capture of each attached monitor. Captures are discarded, not saved. Live manual verification should include dragging stops and picking across displays with differing scaling settings.
 
-Sources: [Blender 5.1 Color Ramp widget](https://docs.blender.org/manual/en/5.1/interface/controls/templates/color_ramp.html), [Windows screen capture](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.graphics.copyfromscreen).
+Sources: [Blender 5.1 Color Ramp widget](https://docs.blender.org/manual/en/5.1/interface/controls/templates/color_ramp.html), [Windows HDR color](https://learn.microsoft.com/en-us/windows/win32/direct3darticles/high-dynamic-range), [Windows SDR white level](https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-displayconfig_sdr_white_level). DirectX bindings use [Vortice.Windows](https://github.com/amerkoleci/Vortice.Windows), licensed under MIT.
 
 ## AI disclaimer
 

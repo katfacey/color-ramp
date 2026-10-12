@@ -6,6 +6,11 @@ internal static class SelfTest
     {
         int checks=0;
         void Check(bool condition,string name) { if(!condition) throw new Exception("FAILED: "+name); checks++; }
+        Check(DesktopCapture.ToSdr(.5f,.5f,.5f,1).R == 188, "linear HDR midtone encodes as sRGB");
+        Check(DesktopCapture.ToSdr(1,1,1,2).R == 188, "HDR display SDR white normalization");
+        Check(DesktopCapture.ToSdr(2,2,2,2).R == 255, "HDR display reference white");
+        Check(DesktopCapture.ToSdr(4,1,0,2) == Color.FromArgb(255,137,0), "HDR highlights retain hue");
+        Check(DesktopCapture.ToSdr(float.NaN,-1,float.PositiveInfinity,0).ToArgb() == Color.Black.ToArgb(), "HDR invalid channels are safe");
         using (var slider = new ValueSlider { DecimalPlaces = 3 }) {
             slider.Value = 2; Check(slider.Value == 1, "slider clamps upper bound");
             slider.Value = -1; Check(slider.Value == 0, "slider clamps lower bound");
@@ -67,9 +72,11 @@ internal static class SelfTest
         bool rejected=false; try { ramp.Validate(); } catch(InvalidDataException) { rejected=true; }
         Check(rejected,"invalid file positions rejected");
         var displays=Screen.AllScreens;
+        var captureInfo = new List<string>();
         foreach(var screen in displays)
         {
-            using var capture=ScreenPicker.Capture(screen.Bounds);
+            using var capture=DesktopCapture.Capture(screen.Bounds);
+            captureInfo.Add(DesktopCapture.LastCaptureInfo);
             Check(capture.Size==screen.Bounds.Size,"monitor capture size");
             Check(capture.GetPixel(capture.Width/2,capture.Height/2).A==255,"monitor capture readable");
         }
@@ -112,6 +119,9 @@ internal static class SelfTest
             Application.Run(main);
         }
         if(lifecycleError is not null) throw lifecycleError;
-        return $"PASS: {checks} checks. Interpolation, alpha, hue paths, duplicate stops, validation, file roundtrip, editor layout and {displays.Length} monitor capture(s).";
+        return $"PASS: {checks} checks. Interpolation, alpha, hue paths, duplicate stops, validation, file roundtrip, editor layout and {displays.Length} monitor capture(s).\n" + string.Join("\n", captureInfo);
     }
 }
+
+
+

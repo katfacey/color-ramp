@@ -11,10 +11,11 @@ internal sealed class MainForm : Form
     readonly RampView ramp = new();
     readonly ValueSlider index = new(), position = new(), alpha = new();
     readonly TextBox hex = new();
-    readonly ComboBox colorMode = new(), interpolation = new(), hue = new();
+    readonly RampComboBox colorMode = new(), interpolation = new(), hue = new();
     readonly Button swatch = new(), pin = new();
     readonly Label status = new(), count = new();
     readonly ToolTip tips = new();
+    ContextMenuStrip? toolsMenu;
     readonly List<Button> eyedroppers = new();
     readonly Bitmap lightEyedropper = LoadEyedropper("light"), darkEyedropper = LoadEyedropper("dark");
     readonly Stack<RampDocument> undo = new(), redo = new();
@@ -43,7 +44,14 @@ internal sealed class MainForm : Form
         KeyPreview = true;
         var add = AddButton("+", 18, 18, 38, AddStop, "Add a stop between the selected stop and its predecessor");
         AddButton("−", 62, 18, 38, DeleteStop, "Delete selected stop (Delete)");
-        AddButton("⋯", 106, 18, 38, ShowMenu, "Ramp tools, export and appearance");
+        var tools = AddButton("", 106, 18, 38, ShowMenu, "Ramp tools, export and appearance");
+        tools.AccessibleName = "Ramp tools";
+        tools.Paint += (_, e) => {
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var pen = new Pen(tools.ForeColor, 1.6f);
+            float x = tools.Width / 2f, y = tools.Height / 2f, size = tools.LogicalToDeviceUnits(5);
+            e.Graphics.DrawLines(pen, [new PointF(x-size,y-2),new PointF(x,y+3),new PointF(x+size,y-2)]);
+        };
         AddEyedropper("", 150, 18, 40, "Pick a color from any display (E)");
         SetupCombo(colorMode, 204, 18, 100, ["RGB", "HSV", "HSL"]);
         SetupCombo(interpolation, 316, 18, 164, ["Linear", "Constant", "Ease", "Cardinal", "B-Spline"]);
@@ -252,7 +260,9 @@ internal sealed class MainForm : Form
     }
     void ShowMenu()
     {
+        toolsMenu?.Dispose();
         var menu = new ContextMenuStrip { BackColor = surface, ForeColor = text };
+        toolsMenu = menu;
         void Item(string label, Action action) { var item = menu.Items.Add(label); item.Click += (_,_) => action(); }
         Item("Open ramp…    Ctrl+O", OpenRamp);
         Item("Save ramp…    Ctrl+S", SaveRamp);
@@ -272,7 +282,7 @@ internal sealed class MainForm : Form
             menu.Items.Add(item);
         }
         Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click a stop: edit color\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
-        menu.Closed += (_,_) => menu.Dispose();
+        // Keep the menu alive through modal dialogs; dispose on next open or form disposal.
         menu.Show(this, new Point(106,52));
     }
     void Undo(bool forward)
@@ -348,7 +358,7 @@ internal sealed class MainForm : Form
     void ShowError(Exception ex) => MessageBox.Show(this,ex.Message,"Color Ramp",MessageBoxButtons.OK,MessageBoxIcon.Error);
     protected override void Dispose(bool disposing)
     {
-        if(disposing) { themeTimer.Dispose(); tips.Dispose(); foreach(var button in eyedroppers) button.Image?.Dispose(); lightEyedropper.Dispose(); darkEyedropper.Dispose(); }
+        if(disposing) { toolsMenu?.Dispose(); themeTimer.Dispose(); tips.Dispose(); foreach(var button in eyedroppers) button.Image?.Dispose(); lightEyedropper.Dispose(); darkEyedropper.Dispose(); }
         base.Dispose(disposing);
     }
 }

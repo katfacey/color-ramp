@@ -7,6 +7,8 @@ internal static class ScreenPicker
 {
     public static Bitmap Capture(Rectangle bounds)
     {
+        try { return DesktopCapture.Capture(bounds); }
+        catch (Exception ex) { System.Diagnostics.Trace.WriteLine($"DirectX capture unavailable: {ex.Message}"); }
         var bitmap=new Bitmap(bounds.Width,bounds.Height,PixelFormat.Format24bppRgb);
         try { using var graphics=Graphics.FromImage(bitmap); graphics.CopyFromScreen(bounds.Location,Point.Empty,bounds.Size,CopyPixelOperation.SourceCopy); return bitmap; }
         catch { bitmap.Dispose(); throw; }

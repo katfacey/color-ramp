@@ -5,6 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>ColorRamp</AssemblyName>
     <Version>0.1.1</Version>
@@ -13,5 +14,9 @@
   <ItemGroup>
     <EmbeddedResource Include="assets/eyedropper-light.png" LogicalName="ColorRamp.eyedropper-light.png" />
     <EmbeddedResource Include="assets/eyedropper-dark.png" LogicalName="ColorRamp.eyedropper-dark.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <None Update="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
