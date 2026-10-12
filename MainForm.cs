@@ -50,7 +50,7 @@ internal sealed class MainForm : Form
         tools.AccessibleName = "Ramp tools";
         SetupCombo(colorMode, 150, 18, 154, ["RGB", "HSV", "HSL"]);
         SetupCombo(interpolation, 316, 18, 164, ["Linear", "Constant", "Ease", "Cardinal", "B-Spline"]);
-        pin = AddButton("📌", 492, 18, 110, () => { TopMost = !TopMost; UpdatePin(); }, "Keep this window on top");
+        pin = AddButton("📌", 492, 18, 110, () => SetPinned(!TopMost), "Keep this window on top");
         pin.Font = new Font("Segoe UI Emoji",12);
         UpdatePin();
         ramp.Bounds = new Rectangle(18, 64, 584, 98);
@@ -305,6 +305,21 @@ internal sealed class MainForm : Form
         return base.ProcessCmdKey(ref msg,keyData);
     }
     public void SetTheme(string value) { theme = value; ApplyTheme(); }
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
+    void SetPinned(bool value)
+    {
+        TopMost = value;
+        if (IsHandleCreated && !SetWindowPos(Handle, new IntPtr(value ? -1 : -2), 0, 0, 0, 0, 0x0013))
+        {
+            status.Text = "Pin could not be applied";
+            return;
+        }
+        UpdatePin();
+        status.Text = value ? "Always on top: on" : "Always on top: off";
+        SaveSession();
+    }
     void UpdatePin() { pin.Text=TopMost ? "📌 ✓" : "📌"; pin.AccessibleName=TopMost ? "Unpin window" : "Pin window"; }
     internal void SetRampForPreview(RampDocument value) { document=value; selected=document.Stops[0]; RefreshFields(); }
     static bool SystemDark()

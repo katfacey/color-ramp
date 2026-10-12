@@ -2,6 +2,8 @@ namespace ColorRamp;
 
 internal static class SelfTest
 {
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint="GetWindowLongW")]
+    static extern int GetWindowLong(IntPtr hwnd, int index);
     public static string Run()
     {
         int checks=0;
@@ -148,6 +150,14 @@ internal static class SelfTest
         {
             main.Show(); Application.DoEvents();
             Check(main.Controls.Cast<Control>().All(c=>main.ClientRectangle.Contains(c.Bounds)),"editor controls within client area");
+            var pinButton=main.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Pin window");
+            pinButton.PerformClick(); Application.DoEvents();
+            Check(main.TopMost && (GetWindowLong(main.Handle,-20)&8)!=0,"pin click sets native Windows topmost style");
+            Check(pinButton.Text.Contains("✓") && pinButton.AccessibleName=="Unpin window","pin feedback reflects enabled state");
+            main.Hide(); main.Show(); Application.DoEvents();
+            Check((GetWindowLong(main.Handle,-20)&8)!=0,"pin survives editor hide and return");
+            pinButton.PerformClick(); Application.DoEvents();
+            Check(!main.TopMost && (GetWindowLong(main.Handle,-20)&8)==0,"second pin click clears native Windows topmost style");
             var view=main.Controls.OfType<RampView>().Single();var expected=view.Document.Sample(.4);int previous=view.Document.Stops.Count;
             main.PlaceMarker(.4);
             Check(view.Document.Stops.Count==previous+1&&view.Selected!.Position==.4,"new marker is added and selected");
