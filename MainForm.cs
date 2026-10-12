@@ -75,7 +75,9 @@ internal sealed class MainForm : Form
         Controls.Add(hex);
         AddLabel("Alpha", 434, 220, 47);
         SetupNumber(alpha, 488, 215, 114, 0, 1, 3, .01m);
-        AddEyedropper("Pick screen", 18, 261, 140, "Sample any monitor (E); Esc cancels");
+        var pickScreen = AddButton("🖥️ Pick screen", 18, 261, 140, async () => await Pick(), "Sample any monitor (E); Esc cancels");
+        pickScreen.Font = new Font("Segoe UI Emoji", 10);
+        pickScreen.AccessibleName = "Pick screen";
         AddButton("Copy color", 170, 261, 130, CopyColor, "Copy selected stop as HEX (Ctrl+C)");
         AddButton("Save ramp", 312, 261, 130, SaveRamp, "Save editable ramp (Ctrl+S)");
         status.Bounds = new Rectangle(454, 266, 148, 25);
