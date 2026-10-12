@@ -33,6 +33,7 @@ internal sealed class MainForm : Form
         this.persist = persist;
         selected = document.Stops[2];
         Text = "Color Ramp";
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Font = new Font("Segoe UI", 10);
         AutoScaleDimensions = new SizeF(96, 96);
         AutoScaleMode = AutoScaleMode.Dpi;

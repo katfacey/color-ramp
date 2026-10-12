@@ -10,6 +10,7 @@
     <AssemblyName>ColorRamp</AssemblyName>
     <Version>0.1.1</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>assets/app-icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="assets/eyedropper-light.png" LogicalName="ColorRamp.eyedropper-light.png" />
