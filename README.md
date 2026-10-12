@@ -1,12 +1,12 @@
 # Color Ramp
 
-A compact standalone Windows color ramp editor inspired by Blender 5.1, with a screen eyedropper that works across connected monitors. Private work in progress; version 0.1.1.
+A compact standalone Windows color ramp editor inspired by Blender 5.1, with a screen eyedropper that works across connected monitors. First public early release: v0.1.0.
 
 ![Approved design](design/approved-mockup.png)
 
 ## Run
 
-Double-click `Launch Color Ramp.cmd` in the local project folder. The portable build is in `dist/ColorRamp.exe`. No administrator rights or Blender installation are needed.
+Download `ColorRamp-v0.1.0-win-x64.exe` from the [GitHub release](https://github.com/katfacey/color-ramp/releases/tag/v0.1.0) and run it. It includes the .NET runtime, so no installation or Blender is needed. The local release is in `releases/v0.1.0/`; the development build remains in `dist/ColorRamp.exe`.
 
 The packaged x64 build includes its .NET runtime. Developer builds need the .NET 8 Windows Desktop runtime (or the .NET 8/9 SDK).
 

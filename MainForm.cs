@@ -280,7 +280,7 @@ internal sealed class MainForm : Form
         }
         var pickerOption = new ToolStripMenuItem("Use Blender-style color picker") { Checked = customPicker };
         pickerOption.Click += (_,_)=>{customPicker=!customPicker;SaveSession();}; menu.Items.Add(pickerOption);
-        Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click ramp: add stop\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
+        Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.0\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click ramp: add stop\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
         // Keep the menu alive through modal dialogs; dispose on next open or form disposal.
         menu.Show(this, new Point(106,52));
     }
