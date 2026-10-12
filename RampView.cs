@@ -10,9 +10,11 @@ internal sealed class RampView : Control
     public event Action<RampStop>? SelectionChanged;
     public event Action? BeforeDrag;
     public event Action? StopMoved;
-    public event Action? EditColor;
+    public event Action<double>? PlaceMarker;
+    public event Action<Color>? CopyHex;
+    ContextMenuStrip? options;
     bool dragging, remembered;
-    public RampView() { DoubleBuffered=true; TabStop=true; Cursor=Cursors.Hand; AccessibleName="Color ramp; drag stops or double-click to edit"; }
+    public RampView() { DoubleBuffered=true; TabStop=true; Cursor=Cursors.Hand; AccessibleName="Color ramp; drag stops, double-click to add, right-click for options"; }
     int LeftEdge => 10;
     int RightEdge => Width-11;
     int X(RampStop s) => LeftEdge+(int)Math.Round(s.Position*(RightEdge-LeftEdge));
@@ -44,7 +46,9 @@ internal sealed class RampView : Control
     }
     protected override void OnMouseDown(MouseEventArgs e)
     {
-        base.OnMouseDown(e); if(e.Button!=MouseButtons.Left) return;
+        base.OnMouseDown(e);
+        if(e.Button==MouseButtons.Right){ShowOptions(e.Location);return;}
+        if(e.Button!=MouseButtons.Left || e.Clicks>1) return;
         Focus();
         var nearby=Document.Stops.OrderBy(s=>Math.Abs(X(s)-e.X)).First();
         if(Math.Abs(X(nearby)-e.X)>14 || e.Y<46 || e.Y>82) return;
@@ -66,7 +70,16 @@ internal sealed class RampView : Control
     protected override void OnMouseDoubleClick(MouseEventArgs e)
     {
         base.OnMouseDoubleClick(e);
-        var nearby=Document.Stops.OrderBy(s=>Math.Abs(X(s)-e.X)).First();
-        if(Math.Abs(X(nearby)-e.X)<=14 && e.Y>=46 && e.Y<=82) { Selected=nearby; SelectionChanged?.Invoke(nearby); EditColor?.Invoke(); }
+        if(e.Button==MouseButtons.Left && e.Y>=8 && e.Y<=82) PlaceMarker?.Invoke(PositionAt(e.X));
     }
+    internal double PositionAt(int x)=>Math.Clamp((x-LeftEdge)/(double)Math.Max(1,RightEdge-LeftEdge),0,1);
+    void ShowOptions(Point point)
+    {
+        options?.Dispose();double position=PositionAt(point.X);
+        options=new ContextMenuStrip{BackColor=BackColor,ForeColor=ForeColor,ShowImageMargin=false};
+        var copy=options.Items.Add("Copy color HEX");copy.Click+=(_,_)=>CopyHex?.Invoke(Document.Sample(position));
+        var place=options.Items.Add("Place marker");place.Enabled=Document.Stops.Count<32;place.Click+=(_,_)=>PlaceMarker?.Invoke(position);
+        options.Show(this,point);
+    }
+    protected override void Dispose(bool disposing){if(disposing)options?.Dispose();base.Dispose(disposing);}
 }

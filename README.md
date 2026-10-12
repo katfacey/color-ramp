@@ -12,10 +12,10 @@ The packaged x64 build includes its .NET runtime. Developer builds need the .NET
 
 ## Using the editor
 
-- Click a stop to select it; drag it to reposition. Use **Pos** for an exact position from 0 to 1.
+- Click a stop to select it; drag it to reposition. Drag **Pos** or **Alpha** left/right from anywhere in the field to adjust relative to its current value. Scroll while hovering to increase/decrease, or double-click the field to type an exact value.
 - **+** inserts a stop between the selected stop and its predecessor (or the next stop when the first is selected). **−** removes the selected stop. A ramp supports 2 to 32 stops.
-- Click the color swatch or double-click a stop to open the Windows color dialog. Enter six HEX digits directly or adjust alpha from 0 to 1.
-- **Pick screen** hides the editor and shows a magnified pixel preview over a frozen capture of each display. Move between monitors freely. Click or press Enter to apply, Esc or right-click to cancel. Arrow keys move one physical pixel.
+- Double-click the ramp to add a marker at that position, using the sampled ramp color and alpha. Right-click the ramp for **Copy color HEX** and **Place marker** at that location. Click the color swatch to open the selected color dialog. Enter six HEX digits directly or adjust alpha from 0 to 1.
+- **The eyedropper beside the color swatch** hides the editor and shows a magnified pixel preview over a frozen capture of each display. Move between monitors freely. Click or press Enter to apply, Esc or right-click to cancel. Arrow keys move one physical pixel.
 - **Copy color** copies the selected stop's six-digit HEX value. **Save ramp** saves the editable settings as `.colorramp.json`.
 - The **⋯** menu has Open, flip, distribute, undo/redo, PNG export, and System/Light/Dark theme choices.
 - **📌** keeps the editor above other windows; a check mark indicates it is pinned. System theme follows Windows' app theme.
@@ -36,7 +36,7 @@ RGB, HSV and HSL modes are supported. RGB interpolation supports Linear, Constan
 
 B-Spline blends before the first stop and after the last stop using Blender-style virtual endpoint stops. A stop's displayed color may differ from its own swatch because B-Spline smooths neighboring colors rather than passing through every swatch exactly.
 
-The compact screen-picking buttons use an eyedropper icon, and the full Pick screen button uses 🖥️. The original vector and transparent 64×64 theme variants are in `assets/`; the artwork is CC0 with no attribution requirement. See `assets/LICENSE.md` for the source record.
+The screen-picking button beside the color swatch uses an eyedropper icon. The original vector and transparent 64×64 theme variants are in `assets/`; the artwork is CC0 with no attribution requirement. See `assets/LICENSE.md` for the source record.
 
 Screen capture uses DirectX desktop duplication, preserving HDR pixels as floating-point scRGB before converting to the ramp's SDR sRGB range. Each display's Windows SDR white level is used to keep ordinary desktop colors consistent across HDR and SDR screens. Highlights outside the SDR range are scaled together to retain their hue. The picker waits for an actual desktop image instead of a cursor-only update, and checks empty black captures against a GDI fallback. A GDI capture fallback is available when DirectX capture is unavailable; this fallback may clip HDR content.
 

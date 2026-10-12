@@ -47,8 +47,7 @@ internal sealed class MainForm : Form
         AddButton("−", 62, 18, 38, DeleteStop, "Delete selected stop (Delete)");
         var tools = AddButton("", 106, 18, 38, ShowMenu, "Ramp tools, export and appearance");
         tools.AccessibleName = "Ramp tools";
-        AddEyedropper("", 150, 18, 40, "Pick a color from any display (E)");
-        SetupCombo(colorMode, 204, 18, 100, ["RGB", "HSV", "HSL"]);
+        SetupCombo(colorMode, 150, 18, 154, ["RGB", "HSV", "HSL"]);
         SetupCombo(interpolation, 316, 18, 164, ["Linear", "Constant", "Ease", "Cardinal", "B-Spline"]);
         pin = AddButton("📌", 492, 18, 110, () => { TopMost = !TopMost; UpdatePin(); }, "Keep this window on top");
         pin.Font = new Font("Segoe UI Emoji",12);
@@ -61,7 +60,8 @@ internal sealed class MainForm : Form
         ramp.SelectionChanged += stop => { selected = stop; RefreshFields(); };
         ramp.BeforeDrag += Remember;
         ramp.StopMoved += () => { RefreshFields(); SaveSession(); };
-        ramp.EditColor += EditColor;
+        ramp.PlaceMarker += PlaceMarker;
+        ramp.CopyHex += color => { try { Clipboard.SetText(RampDocument.ToHex(color)); status.Text="Color copied"; } catch(ExternalException) { status.Text="Clipboard busy"; } };
         SetupNumber(index, 18, 175, 80, 0, 31, 0, 1);
         index.StepSelector = true;
         index.Cursor = Cursors.Default;
@@ -72,7 +72,7 @@ internal sealed class MainForm : Form
         count.Bounds = new Rectangle(478, 180, 124, 24);
         count.TextAlign = ContentAlignment.MiddleRight;
         Controls.Add(count);
-        swatch = AddButton("", 18, 215, 170, EditColor, "Open color picker; double-click a stop to edit its color");
+        swatch = AddButton("", 18, 215, 170, EditColor, "Open color picker; click the swatch to edit its color");
         AddEyedropper("", 196, 215, 38, "Set this stop from a screen pixel");
         AddLabel("HEX", 246, 220, 38);
         hex.Bounds = new Rectangle(288, 216, 126, 28);
@@ -81,11 +81,8 @@ internal sealed class MainForm : Form
         Controls.Add(hex);
         AddLabel("Alpha", 434, 220, 47);
         SetupNumber(alpha, 488, 215, 114, 0, 1, 3, .01m);
-        var pickScreen = AddButton("🖥️ Pick screen", 18, 261, 140, async () => await Pick(), "Sample any monitor (E); Esc cancels");
-        pickScreen.Font = new Font("Segoe UI Emoji", 10);
-        pickScreen.AccessibleName = "Pick screen";
-        AddButton("📋 Copy color", 170, 261, 130, CopyColor, "Copy selected stop as HEX (Ctrl+C)");
-        AddButton("💾 Save ramp", 312, 261, 130, SaveRamp, "Save editable ramp (Ctrl+S)");
+        AddButton("📋 Copy color", 18, 261, 130, CopyColor, "Copy selected stop as HEX (Ctrl+C)");
+        AddButton("💾 Save ramp", 160, 261, 130, SaveRamp, "Save editable ramp (Ctrl+S)");
         status.Bounds = new Rectangle(454, 266, 148, 25);
         status.TextAlign = ContentAlignment.MiddleRight;
         status.Font = new Font("Segoe UI", 8.5f);
@@ -140,7 +137,7 @@ internal sealed class MainForm : Form
     {
         control.Bounds = new Rectangle(x,y,width,32);
         control.Minimum = min; control.Maximum = max; control.DecimalPlaces = decimals; control.Increment = increment;
-        tips.SetToolTip(control, "Drag to adjust; double-click to type; Left/Right for fine adjustments");
+        tips.SetToolTip(control, "Drag left/right to adjust; scroll while hovering; double-click to type");
         control.AccessibleName = control == index ? "Selected stop index" : control == position ? "Stop position" : "Stop alpha";
         Controls.Add(control);
     }
@@ -184,6 +181,12 @@ internal sealed class MainForm : Form
             selected = new RampStop { Position = p, Hex = RampDocument.ToHex(c), Alpha = c.A/255.0 };
             document.Stops.Add(selected); Sort();
         });
+    }
+    internal void PlaceMarker(double position)
+    {
+        if(document.Stops.Count>=32){status.Text="32 stop limit";return;}
+        var color=document.Sample(position);
+        Change(()=>{selected=new RampStop{Position=position,Hex=RampDocument.ToHex(color),Alpha=color.A/255.0};document.Stops.Add(selected);Sort();});
     }
     void DeleteStop()
     {
@@ -276,7 +279,7 @@ internal sealed class MainForm : Form
         }
         var pickerOption = new ToolStripMenuItem("Use Blender-style color picker") { Checked = customPicker };
         pickerOption.Click += (_,_)=>{customPicker=!customPicker;SaveSession();}; menu.Items.Add(pickerOption);
-        Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click a stop: edit color\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
+        Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click ramp: add stop\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
         // Keep the menu alive through modal dialogs; dispose on next open or form disposal.
         menu.Show(this, new Point(106,52));
     }

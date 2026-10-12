@@ -6,6 +6,27 @@ internal static class SelfTest
     {
         int checks=0;
         void Check(bool condition,string name) { if(!condition) throw new Exception("FAILED: "+name); checks++; }
+        using(var scrub=new ValueSlider {Width=120,Height=32,DecimalPlaces=3,Increment=.001m,Value=.5m})
+        {
+            var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+            typeof(ValueSlider).GetMethod("OnMouseDown",flags)!.Invoke(scrub,[new MouseEventArgs(MouseButtons.Left,1,105,12,0)]);
+            Check(scrub.Value==.5m,"click does not jump slider value");
+            typeof(ValueSlider).GetMethod("OnMouseMove",flags)!.Invoke(scrub,[new MouseEventArgs(MouseButtons.Left,1,125,12,0)]);
+            Check(scrub.Value>.5m,"relative drag right increases value");
+            typeof(ValueSlider).GetMethod("OnMouseMove",flags)!.Invoke(scrub,[new MouseEventArgs(MouseButtons.Left,1,85,12,0)]);
+            Check(scrub.Value<.5m,"relative drag left decreases value");
+            typeof(ValueSlider).GetMethod("OnMouseUp",flags)!.Invoke(scrub,[new MouseEventArgs(MouseButtons.Left,1,85,12,0)]);
+            scrub.Value=.5m;scrub.ScrollValue(120);Check(scrub.Value==.501m,"wheel increases by position increment");
+            scrub.ScrollValue(-120);Check(scrub.Value==.5m,"wheel decreases by position increment");
+            scrub.Increment=.01m;scrub.ScrollValue(60);Check(scrub.Value==.5m,"partial wheel deltas accumulate");scrub.ScrollValue(60);Check(scrub.Value==.51m,"alpha wheel increment");
+        }
+        using(var view=new RampView {Width=220,Height=98})
+        {
+            double placed=-1;view.PlaceMarker+=position=>placed=position;
+            typeof(RampView).GetMethod("OnMouseDoubleClick",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(view,[new MouseEventArgs(MouseButtons.Left,2,110,30,0)]);
+            Check(Math.Abs(placed-view.PositionAt(110))<1e-9,"double click places marker at cursor");
+            Check(view.PositionAt(-10)==0&&view.PositionAt(300)==1,"marker placement clamps endpoints");
+        }
         foreach(var color in new[]{Color.Red,Color.Lime,Color.Blue,Color.White,Color.Black,Color.FromArgb(43,91,172)})
         {
             using var wheel=new ColorWheel();wheel.SetColor(color);
@@ -127,6 +148,10 @@ internal static class SelfTest
         {
             main.Show(); Application.DoEvents();
             Check(main.Controls.Cast<Control>().All(c=>main.ClientRectangle.Contains(c.Bounds)),"editor controls within client area");
+            var view=main.Controls.OfType<RampView>().Single();var expected=view.Document.Sample(.4);int previous=view.Document.Stops.Count;
+            main.PlaceMarker(.4);
+            Check(view.Document.Stops.Count==previous+1&&view.Selected!.Position==.4,"new marker is added and selected");
+            Check(view.Selected!.Hex==RampDocument.ToHex(expected)&&Math.Abs(view.Selected.Alpha-expected.A/255.0)<1e-9,"marker inherits sampled color and alpha");
             main.SetTheme("Light"); main.SetTheme("Dark"); main.Close();
         }
         Exception? lifecycleError = null;
