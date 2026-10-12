@@ -1,6 +1,6 @@
 # Color Ramp
 
-A compact standalone Windows color ramp editor inspired by Blender 5.1, with a screen eyedropper that works across connected monitors. Private work in progress; version 0.1.
+A compact standalone Windows color ramp editor inspired by Blender 5.1, with a screen eyedropper that works across connected monitors. Private work in progress; version 0.1.1.
 
 ![Approved design](design/approved-mockup.png)
 
@@ -18,7 +18,7 @@ The packaged x64 build includes its .NET runtime. Developer builds need the .NET
 - **Pick screen** hides the editor and shows a magnified pixel preview over a frozen capture of each display. Move between monitors freely. Click or press Enter to apply, Esc or right-click to cancel. Arrow keys move one physical pixel.
 - **Copy color** copies the selected stop's six-digit HEX value. **Save ramp** saves the editable settings as `.colorramp.json`.
 - The **⋯** menu has Open, flip, distribute, undo/redo, PNG export, and System/Light/Dark theme choices.
-- **Pin** keeps the editor above other windows. System theme follows Windows' app theme.
+- **📌** keeps the editor above other windows; a check mark indicates it is pinned. System theme follows Windows' app theme.
 
 | Shortcut | Action |
 |---|---|
@@ -33,6 +33,10 @@ The last ramp and theme/pin choices are saved in `%LOCALAPPDATA%\ColorRamp`. Scr
 ## Color behavior and current limits
 
 RGB, HSV and HSL modes are supported. RGB interpolation supports Linear, Constant, Ease, Cardinal and B-Spline. HSV/HSL use Linear, Constant or Ease and expose Near/Far/Clockwise/Counterclockwise hue paths. PNG export preserves alpha.
+
+B-Spline blends before the first stop and after the last stop using Blender-style virtual endpoint stops. A stop's displayed color may differ from its own swatch because B-Spline smooths neighboring colors rather than passing through every swatch exactly.
+
+The screen-picking buttons use an actual eyedropper icon. Its original vector and transparent 64×64 theme variants are in `assets/`; the artwork is CC0 with no attribution requirement. See `assets/LICENSE.md` for the source record.
 
 This is an independent app, not an official Blender product or an exact reproduction of Blender's color-management pipeline. Interpolation uses 8-bit display RGB values; Blender may interpolate scene-linear values and apply view transforms. Colors may differ under HDR, wide-gamut or ICC color management. Protected video, secure desktops and some hardware overlays cannot be sampled reliably. Captures freeze the desktop at the time picking begins; restart picking to refresh changing content.
 
@@ -59,4 +63,3 @@ Sources: [Blender 5.1 Color Ramp widget](https://docs.blender.org/manual/en/5.1/
 ## AI disclaimer
 
 This project was coded with AI assistance using OpenAI Codex.
-

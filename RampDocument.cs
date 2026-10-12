@@ -51,10 +51,19 @@ public sealed class RampDocument
     {
         var ordered = Stops.OrderBy(s => s.Position).ToArray();
         int right = Array.FindIndex(ordered, s => s.Position > position);
-        if (right == 0) return WithAlpha(ordered[0]);
-        if (right < 0) return WithAlpha(ordered[^1]);
-        var a = ordered[right - 1]; var b = ordered[right];
-        double t = Math.Clamp((position - a.Position) / (b.Position - a.Position), 0, 1);
+        bool spline = ColorMode == "RGB" && Interpolation is "Cardinal" or "B-Spline";
+        if (right == 0 && !spline) return WithAlpha(ordered[0]);
+        if (right < 0 && !spline) return WithAlpha(ordered[^1]);
+        if (right < 0) right = ordered.Length;
+        var a = ordered[Math.Max(0, right - 1)];
+        var b = ordered[Math.Min(ordered.Length - 1, right)];
+        // Splines need virtual endpoint stops at 0/1 carrying the nearest stop color.
+        // Clamping to a constant outside the real stops creates visible discontinuities.
+        double leftPosition = right == 0 ? 0 : a.Position;
+        double rightPosition = right == ordered.Length ? 1 : b.Position;
+        double t = leftPosition == rightPosition
+            ? (right == ordered.Length ? 0 : 1)
+            : Math.Clamp((position - leftPosition) / (rightPosition - leftPosition), 0, 1);
         if (Interpolation == "Constant") return WithAlpha(a);
         if (Interpolation == "Ease") t = t * t * (3 - 2 * t);
         if (ColorMode != "RGB")

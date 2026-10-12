@@ -25,6 +25,8 @@ internal static class Program
         {
             var output = args[Array.IndexOf(args, "--preview") + 1];
             using var form = new MainForm(false);
+            int rampArgument = Array.IndexOf(args,"--ramp");
+            if (rampArgument >= 0 && rampArgument + 1 < args.Length) form.SetRampForPreview(Storage.Read(args[rampArgument+1]));
             form.SetTheme(args.Contains("--light") ? "Light" : "Dark");
             form.Show();
             Application.DoEvents();

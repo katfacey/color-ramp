@@ -15,6 +15,8 @@ internal sealed class MainForm : Form
     readonly Button swatch = new(), pin = new();
     readonly Label status = new(), count = new();
     readonly ToolTip tips = new();
+    readonly List<Button> eyedroppers = new();
+    readonly Bitmap lightEyedropper = LoadEyedropper("light"), darkEyedropper = LoadEyedropper("dark");
     readonly Stack<RampDocument> undo = new(), redo = new();
     readonly System.Windows.Forms.Timer themeTimer = new() { Interval = 2000 };
     readonly bool persist;
@@ -42,10 +44,12 @@ internal sealed class MainForm : Form
         var add = AddButton("+", 18, 18, 38, AddStop, "Add a stop between the selected stop and its predecessor");
         AddButton("−", 62, 18, 38, DeleteStop, "Delete selected stop (Delete)");
         AddButton("⋯", 106, 18, 38, ShowMenu, "Ramp tools, export and appearance");
-        AddButton("⌖", 150, 18, 40, async () => await Pick(), "Pick a color from any display (E)");
+        AddEyedropper("", 150, 18, 40, "Pick a color from any display (E)");
         SetupCombo(colorMode, 204, 18, 100, ["RGB", "HSV", "HSL"]);
         SetupCombo(interpolation, 316, 18, 164, ["Linear", "Constant", "Ease", "Cardinal", "B-Spline"]);
-        pin = AddButton("Pin", 492, 18, 110, () => { TopMost = !TopMost; pin.Text = TopMost ? "Pinned ✓" : "Pin"; }, "Keep this window on top");
+        pin = AddButton("📌", 492, 18, 110, () => { TopMost = !TopMost; UpdatePin(); }, "Keep this window on top");
+        pin.Font = new Font("Segoe UI Emoji",12);
+        UpdatePin();
         ramp.Bounds = new Rectangle(18, 64, 584, 98);
         ramp.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         Controls.Add(ramp);
@@ -63,7 +67,7 @@ internal sealed class MainForm : Form
         count.TextAlign = ContentAlignment.MiddleRight;
         Controls.Add(count);
         swatch = AddButton("", 18, 215, 170, EditColor, "Open color picker; double-click a stop to edit its color");
-        AddButton("⌖", 196, 215, 38, async () => await Pick(), "Set this stop from a screen pixel");
+        AddEyedropper("", 196, 215, 38, "Set this stop from a screen pixel");
         AddLabel("HEX", 246, 220, 38);
         hex.Bounds = new Rectangle(288, 216, 126, 28);
         hex.BorderStyle = BorderStyle.FixedSingle;
@@ -71,7 +75,7 @@ internal sealed class MainForm : Form
         Controls.Add(hex);
         AddLabel("Alpha", 434, 220, 47);
         SetupNumber(alpha, 488, 215, 114, 0, 1, 3, .01m);
-        AddButton("Pick screen", 18, 261, 140, async () => await Pick(), "Sample any monitor (E); Esc cancels");
+        AddEyedropper("Pick screen", 18, 261, 140, "Sample any monitor (E); Esc cancels");
         AddButton("Copy color", 170, 261, 130, CopyColor, "Copy selected stop as HEX (Ctrl+C)");
         AddButton("Save ramp", 312, 261, 130, SaveRamp, "Save editable ramp (Ctrl+S)");
         status.Bounds = new Rectangle(454, 266, 148, 25);
@@ -102,6 +106,19 @@ internal sealed class MainForm : Form
         tips.SetToolTip(button, tip);
         button.AccessibleName = string.IsNullOrEmpty(title) ? "Selected stop color" : title;
         return button;
+    }
+    static Bitmap LoadEyedropper(string variant)
+    {
+        using var stream = typeof(MainForm).Assembly.GetManifestResourceStream($"ColorRamp.eyedropper-{variant}.png") ?? throw new InvalidOperationException("Missing eyedropper asset.");
+        using var image = Image.FromStream(stream);
+        return new Bitmap(image);
+    }
+    void AddEyedropper(string title,int x,int y,int width,string tip)
+    {
+        var button=AddButton(title,x,y,width,async () => await Pick(),tip);
+        button.AccessibleName=string.IsNullOrEmpty(title) ? "Screen eyedropper" : title;
+        button.TextImageRelation=TextImageRelation.ImageBeforeText;
+        eyedroppers.Add(button);
     }
     void AddLabel(string title, int x, int y, int width) => Controls.Add(new Label { Text = title, Bounds = new Rectangle(x,y,width,24) });
     void SetupCombo(ComboBox control, int x, int y, int width, string[] items)
@@ -252,7 +269,7 @@ internal sealed class MainForm : Form
             item.Click += (_,_) => { SetTheme(choice); SaveSession(); };
             menu.Items.Add(item);
         }
-        Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click a stop: edit color\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
+        Item("About / shortcuts", () => MessageBox.Show("Color Ramp 0.1.1\n\nE: pick screen • Esc: cancel picking\nCtrl+Z / Ctrl+Y: undo / redo\nCtrl+S / Ctrl+O: save / open\nCtrl+C: copy color • Delete: remove stop\nDouble-click a stop: edit color\n\nIndependent app inspired by Blender.\nScreen pixels are sampled as displayed RGB.", "Color Ramp"));
         menu.Closed += (_,_) => menu.Dispose();
         menu.Show(this, new Point(106,52));
     }
@@ -277,6 +294,8 @@ internal sealed class MainForm : Form
         return base.ProcessCmdKey(ref msg,keyData);
     }
     public void SetTheme(string value) { theme = value; ApplyTheme(); }
+    void UpdatePin() { pin.Text=TopMost ? "📌 ✓" : "📌"; pin.AccessibleName=TopMost ? "Unpin window" : "Pin window"; }
+    internal void SetRampForPreview(RampDocument value) { document=value; selected=document.Stops[0]; RefreshFields(); }
     static bool SystemDark()
     {
         using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
@@ -295,11 +314,18 @@ internal sealed class MainForm : Form
             if (c is Button b) { b.FlatAppearance.BorderColor = dark ? Color.FromArgb(83,86,91) : Color.FromArgb(192,195,201); b.FlatAppearance.MouseOverBackColor = dark ? Color.FromArgb(73,77,82) : Color.FromArgb(224,229,235); }
         }
         swatch.BackColor=selected.Color;
+        foreach(var button in eyedroppers)
+        {
+            var oldImage=button.Image;
+            button.Image=new Bitmap(dark ? darkEyedropper : lightEyedropper,new Size(LogicalToDeviceUnits(20),LogicalToDeviceUnits(20)));
+            oldImage?.Dispose();
+        }
         ramp.Dark=dark; ramp.BackColor=surface; ramp.Invalidate();
         int enabled=dark ? 1:0;
         if (IsHandleCreated) DwmSetWindowAttribute(Handle,20,ref enabled,sizeof(int));
     }
     protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); int enabled=dark?1:0; DwmSetWindowAttribute(Handle,20,ref enabled,sizeof(int)); }
+    protected override void OnDpiChanged(DpiChangedEventArgs e) { base.OnDpiChanged(e); ApplyTheme(); }
     void SaveSession()
     {
         if (!persist) return;
@@ -313,14 +339,14 @@ internal sealed class MainForm : Form
             var path=Path.Combine(Storage.DirectoryPath,SessionFile);
             if(File.Exists(path)) { document=Storage.Read(path); selected=document.Stops[0]; }
             var settings=Path.Combine(Storage.DirectoryPath,"appearance.json");
-            if(File.Exists(settings)) { using var json=JsonDocument.Parse(File.ReadAllText(settings)); var root=json.RootElement; var value=root.GetProperty("Theme").GetString(); if(value is "System" or "Light" or "Dark") theme=value; TopMost=root.GetProperty("Pinned").GetBoolean(); pin.Text=TopMost?"Pinned ✓":"Pin"; }
+            if(File.Exists(settings)) { using var json=JsonDocument.Parse(File.ReadAllText(settings)); var root=json.RootElement; var value=root.GetProperty("Theme").GetString(); if(value is "System" or "Light" or "Dark") theme=value; TopMost=root.GetProperty("Pinned").GetBoolean(); UpdatePin(); }
         }
         catch { status.Text="Default ramp loaded"; }
     }
     void ShowError(Exception ex) => MessageBox.Show(this,ex.Message,"Color Ramp",MessageBoxButtons.OK,MessageBoxIcon.Error);
     protected override void Dispose(bool disposing)
     {
-        if(disposing) { themeTimer.Dispose(); tips.Dispose(); }
+        if(disposing) { themeTimer.Dispose(); tips.Dispose(); foreach(var button in eyedroppers) button.Image?.Dispose(); lightEyedropper.Dispose(); darkEyedropper.Dispose(); }
         base.Dispose(disposing);
     }
 }

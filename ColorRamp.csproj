@@ -7,7 +7,11 @@
     <Nullable>enable</Nullable>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>ColorRamp</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="assets/eyedropper-light.png" LogicalName="ColorRamp.eyedropper-light.png" />
+    <EmbeddedResource Include="assets/eyedropper-dark.png" LogicalName="ColorRamp.eyedropper-dark.png" />
+  </ItemGroup>
 </Project>

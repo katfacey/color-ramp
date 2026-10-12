@@ -27,6 +27,30 @@ internal static class SelfTest
         Check(RampDocument.ToHex(ramp.Sample(.5))=="#445566","duplicate stop right continuity");
         Check(RampDocument.TryHex("#Ab12Cd",out var parsed) && RampDocument.ToHex(parsed)=="#AB12CD","HEX parsing");
         Check(!RampDocument.TryHex("bad-input",out _),"invalid HEX rejection");
+        var splineRamp = new RampDocument { Interpolation="B-Spline", Stops=[new() { Position=.332,Hex="#000000",Alpha=0 },new() { Position=1,Hex="#FFFFFF",Alpha=1 }] };
+        // Blender 5.1 reference samples, rounded from its normalized spline weights.
+        foreach(var sample in new[] { (0.0,0),(.166,5),(.332,43),(.666,128),(1.0,213) })
+        {
+            var value=splineRamp.Sample(sample.Item1);
+            Check(Math.Abs(value.R-sample.Item2)<=1 && value.R==value.G && value.G==value.B,"Blender B-Spline reference sample");
+            Check(value.A==value.R,"B-Spline alpha follows same weights");
+        }
+        Check(Math.Abs(splineRamp.Sample(.332-1e-7).R-splineRamp.Sample(.332+1e-7).R)<=1,"B-Spline continuous across first stop");
+        Check(Math.Abs(splineRamp.Sample(1-1e-7).R-splineRamp.Sample(1).R)<=1,"B-Spline continuous at right edge");
+        splineRamp.Stops[0].Position=0;
+        splineRamp.Stops[1].Position=.668;
+        Check(splineRamp.Sample(.834).R>splineRamp.Sample(.668).R && splineRamp.Sample(.834).R<255,"B-Spline keeps blending beyond last stop");
+        Check(Math.Abs(splineRamp.Sample(.668-1e-7).R-splineRamp.Sample(.668+1e-7).R)<=1,"B-Spline continuous across last stop");
+        splineRamp.Stops=[new() { Position=.2,Hex="#000000" },new() { Position=.6,Hex="#FF0000" },new() { Position=.8,Hex="#FFFFFF" }];
+        Check(splineRamp.Sample(.1).R==5 && splineRamp.Sample(.1).G==0,"B-Spline left virtual segment with multiple stops");
+        Check(splineRamp.Sample(.9).G==250,"B-Spline right virtual segment with multiple stops");
+        splineRamp.Stops=[new() { Position=.332,Hex="#000000" },new() { Position=1,Hex="#FFFFFF" }];
+        splineRamp.Interpolation="Linear";
+        Check(splineRamp.Sample(.166).R==0 && splineRamp.Sample(1).R==255,"Linear keeps constant endpoint extension");
+        splineRamp.Interpolation="Constant";
+        Check(splineRamp.Sample(.999).R==0,"Constant unaffected by spline endpoint handling");
+        splineRamp.Interpolation="Cardinal";
+        Check(Math.Abs(splineRamp.Sample(.332-1e-7).R-splineRamp.Sample(.332+1e-7).R)<=1,"Cardinal endpoint continuity");
         var clone=ramp.Clone(); clone.Stops[0].Hex="#000000"; Check(ramp.Stops[0].Hex=="#FF0000","independent undo snapshots");
         var file=Path.Combine(Path.GetTempPath(),"colorramp-test-"+Guid.NewGuid()+".json");
         try { Storage.Write(file,ramp); var restored=Storage.Read(file); Check(restored.Stops.Count==4 && restored.HueInterpolation=="Far","ramp file roundtrip"); }
