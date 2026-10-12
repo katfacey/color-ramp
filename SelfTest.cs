@@ -41,12 +41,45 @@ internal static class SelfTest
             Check(capture.Size==screen.Bounds.Size,"monitor capture size");
             Check(capture.GetPixel(capture.Width/2,capture.Height/2).A==255,"monitor capture readable");
         }
+        var picker = ScreenPicker.PickAsync();
+        Application.DoEvents();
+        var overlays = Application.OpenForms.OfType<PickerOverlay>().ToArray();
+        Check(overlays.Length == displays.Length,"one picker overlay per monitor");
+        foreach(var overlay in overlays)
+        {
+            Check(overlay.Bounds == overlay.DisplayBounds,"picker physical monitor bounds");
+            using var rendered = new Bitmap(overlay.Width,overlay.Height);
+            overlay.DrawToBitmap(rendered,new Rectangle(Point.Empty,overlay.Size));
+            Check(rendered.Width == overlay.DisplayBounds.Width,"picker rendering");
+        }
+        overlays[0].CancelForTest();
+        Application.DoEvents();
+        Check(picker.IsCompleted && picker.Result is null,"picker cancellation completes");
+        Check(!Application.OpenForms.OfType<PickerOverlay>().Any(),"picker overlay cleanup");
         using(var main=new MainForm(false))
         {
             main.Show(); Application.DoEvents();
             Check(main.Controls.Cast<Control>().All(c=>main.ClientRectangle.Contains(c.Bounds)),"editor controls within client area");
             main.SetTheme("Light"); main.SetTheme("Dark"); main.Close();
         }
+        Exception? lifecycleError = null;
+        using(var main = new MainForm(false))
+        {
+            main.Shown += async (_,_) => {
+                try {
+                    var pick = main.PickForTest();
+                    await Task.Delay(500);
+                    var active = Application.OpenForms.OfType<PickerOverlay>().ToArray();
+                    Check(active.Length == displays.Length && !main.Visible,"main editor hides while picking");
+                    active[0].CancelForTest();
+                    await pick;
+                    Check(main.Visible && !main.IsDisposed,"editor returns after cancellation");
+                } catch(Exception ex) { lifecycleError = ex; }
+                finally { main.Close(); }
+            };
+            Application.Run(main);
+        }
+        if(lifecycleError is not null) throw lifecycleError;
         return $"PASS: {checks} checks. Interpolation, alpha, hue paths, duplicate stops, validation, file roundtrip, editor layout and {displays.Length} monitor capture(s).";
     }
 }

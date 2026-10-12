@@ -10,6 +10,10 @@ internal static class Program
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        Application.ThreadException += (_, e) => {
+            try { Directory.CreateDirectory(Storage.DirectoryPath); File.AppendAllText(Path.Combine(Storage.DirectoryPath,"errors.log"),$"{DateTimeOffset.Now:O}\n{e.Exception}\n"); } catch { }
+            MessageBox.Show("Color Ramp encountered an error.\n"+e.Exception.Message,"Color Ramp",MessageBoxButtons.OK,MessageBoxIcon.Error);
+        };
         if (args.Contains("--self-test"))
         {
             var output = args.SkipWhile(a => a != "--self-test").Skip(1).FirstOrDefault() ?? "self-test.txt";

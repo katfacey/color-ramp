@@ -186,6 +186,7 @@ internal sealed class MainForm : Form
         using var dialog = new ColorDialog { Color = selected.Color, FullOpen = true, AnyColor = true };
         if (dialog.ShowDialog(this) == DialogResult.OK) Change(() => selected.Hex = RampDocument.ToHex(dialog.Color));
     }
+    internal Task PickForTest() => Pick();
     async Task Pick()
     {
         if (picking) return;

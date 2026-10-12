@@ -76,6 +76,7 @@ internal sealed class PickerOverlay : Form
         var p=new Point(global.X-DisplayBounds.X,global.Y-DisplayBounds.Y);
         return screenshot.GetPixel(Math.Clamp(p.X,0,screenshot.Width-1),Math.Clamp(p.Y,0,screenshot.Height-1));
     }
+    internal void CancelForTest() => finish(null);
     Rectangle Card(Point p)
     {
         int w=184,h=242;
