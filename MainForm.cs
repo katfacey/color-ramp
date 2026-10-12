@@ -9,7 +9,7 @@ internal sealed class MainForm : Form
     RampDocument document = new();
     RampStop selected;
     readonly RampView ramp = new();
-    readonly NumericUpDown index = new(), position = new(), alpha = new();
+    readonly ValueSlider index = new(), position = new(), alpha = new();
     readonly TextBox hex = new();
     readonly ComboBox colorMode = new(), interpolation = new(), hue = new();
     readonly Button swatch = new(), pin = new();
@@ -141,11 +141,11 @@ internal sealed class MainForm : Form
         control.AccessibleName = control == colorMode ? "Color mode" : control == interpolation ? "Interpolation" : "Hue interpolation";
         Controls.Add(control);
     }
-    void SetupNumber(NumericUpDown control, int x, int y, int width, decimal min, decimal max, int decimals, decimal increment)
+    void SetupNumber(ValueSlider control, int x, int y, int width, decimal min, decimal max, int decimals, decimal increment)
     {
         control.Bounds = new Rectangle(x,y,width,32);
         control.Minimum = min; control.Maximum = max; control.DecimalPlaces = decimals; control.Increment = increment;
-        control.BorderStyle = BorderStyle.FixedSingle;
+        tips.SetToolTip(control, "Drag to adjust; double-click to type; Left/Right for fine adjustments");
         control.AccessibleName = control == index ? "Selected stop index" : control == position ? "Stop position" : "Stop alpha";
         Controls.Add(control);
     }
@@ -285,7 +285,7 @@ internal sealed class MainForm : Form
     }
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
-        bool editing = ActiveControl is TextBox || ActiveControl is NumericUpDown;
+        bool editing = ActiveControl is TextBox || ActiveControl is ValueSlider;
         if (keyData == (Keys.Control | Keys.S)) { SaveRamp(); return true; }
         if (keyData == (Keys.Control | Keys.O)) { OpenRamp(); return true; }
         if (keyData == (Keys.Control | Keys.Z) && ActiveControl != hex) { Undo(false); return true; }

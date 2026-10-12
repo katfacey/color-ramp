@@ -6,6 +6,14 @@ internal static class SelfTest
     {
         int checks=0;
         void Check(bool condition,string name) { if(!condition) throw new Exception("FAILED: "+name); checks++; }
+        using (var slider = new ValueSlider { DecimalPlaces = 3 }) {
+            slider.Value = 2; Check(slider.Value == 1, "slider clamps upper bound");
+            slider.Value = -1; Check(slider.Value == 0, "slider clamps lower bound");
+            slider.Value = .12345m; Check(slider.Value == .123m, "slider decimal precision");
+            slider.DecimalPlaces = 0; slider.Maximum = 31; slider.Value = 12.7m;
+            Check(slider.Value == 13, "stop slider selects whole indices");
+            slider.Maximum = 1; Check(slider.Value == 1, "stop slider clamps when stops removed");
+        }
         var ramp=new RampDocument { Stops=[new() { Position=0,Hex="#000000",Alpha=0 }, new() { Position=1,Hex="#FFFFFF",Alpha=1 }] };
         ramp.Validate();
         Check(ramp.Sample(0).A==0 && ramp.Sample(1).R==255,"endpoint color and alpha");
